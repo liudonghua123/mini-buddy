@@ -6,7 +6,7 @@
 
 内置 MCP 服务器与技能管理、多知识库 RAG、定时任务、多助手角色、会话级能力控制 —— FastAPI + React 单机部署，数据全部存本地。
 
-[功能](#-功能总览) · [截图](#-界面一览) · [快速开始](#-快速开始) · [架构](#-架构) · [License](#license)
+[功能](#-功能总览) · [截图](#-界面一览) · [快速开始](#-快速开始) · [Cloudflare 部署](#cloudflare-workers-部署) · [架构](#-架构) · [License](#license)
 
 </div>
 
@@ -112,6 +112,26 @@ BASE_URL=http://127.0.0.1:8688 node scripts/verify_round11.mjs
 ```
 </details>
 
+## Cloudflare Workers 部署
+
+支持把前端托管到 Cloudflare Worker（全球 CDN + 统一域名），`/api/*` 自动反向代理到你的 Python 后端（本地 / VPS / Docker，SSE 流式透传）：
+
+```
+浏览器 → Cloudflare Worker
+          ├─ 静态前端   Cloudflare Assets
+          └─ /api/*   → BACKEND_URL（Python 后端）
+```
+
+```bash
+cd worker && npm install
+npx wrangler secret put BACKEND_URL   # 如 https://xxx.trycloudflare.com
+npx wrangler deploy
+```
+
+后端推荐用 Cloudflare Tunnel 暴露（无需公网 IP）：`cloudflared tunnel --url http://127.0.0.1:8688`。监听地址 / 端口可用环境变量覆盖：`HOST=0.0.0.0 PORT=8688 python run.py`。完整说明见 [worker/README.md](worker/README.md)。
+
+> ⚠️ 后端无鉴权，公网暴露请自行加 Cloudflare Access 或反代层认证。
+
 ## 🏗️ 架构
 
 ```
@@ -132,6 +152,7 @@ mini-buddy/
 │       ├── components/     #   Chat / MCP / Skills / Docs / Tasks / Assistants / Settings
 │       └── lib/            #   SSE 流管理、markdown 渲染、i18n
 └── scripts/                # 回归验证与截图脚本（Playwright/CDP）
+└── worker/                 # Cloudflare Worker 网关（静态托管 + API 反代）
 ```
 
 **技术栈**：FastAPI · AgentScope（ReAct Agent + Toolkit + 权限引擎）· React 18 · Vite · Monaco Editor · SSE

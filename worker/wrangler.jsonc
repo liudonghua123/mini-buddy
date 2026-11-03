@@ -1,0 +1,23 @@
+// Mini Buddy Cloudflare Worker 配置
+// 静态前端由 Cloudflare Assets 直接托管；/api/* 由 Worker 反代到 BACKEND_URL
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mini-buddy",
+  "main": "src/index.js",
+  "compatibility_date": "2025-01-01",
+
+  // 静态资产：指向仓库内已构建的前端产物
+  "assets": {
+    "directory": "../frontend/dist",
+    // 非文件路径回退到 index.html（SPA 路由）
+    "not_found_handling": "single-page-application",
+    // /api/* 始终先走 Worker（代理到 Python 后端）
+    "run_worker_first": ["/api/*"]
+  },
+
+  // 后端地址：本地调试默认指向本机 8688
+  // 生产部署用 `wrangler secret put BACKEND_URL` 覆盖（secret 优先于 vars）
+  "vars": {
+    "BACKEND_URL": "http://127.0.0.1:8688"
+  }
+}
